@@ -88,6 +88,6 @@ union tunnel_offload_info {
 
 int onvm_decapsulate_pkt(struct rte_mbuf *pkt);
 
-void onvm_encapsulate_pkt(struct rte_mbuf *pkt, struct ether_addr *src_addr, struct ether_addr *dst_addr);
+void onvm_encapsulate_pkt(struct rte_mbuf *pkt, struct rte_ether_addr *src_addr, struct rte_ether_addr *dst_addr);
 
 #endif

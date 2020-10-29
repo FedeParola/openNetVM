@@ -628,7 +628,7 @@ onvm_stats_print_MAC(uint8_t port) {
                 return err_address;
 
         if (unlikely(addresses[port][0] == '\0')) {
-                struct ether_addr mac;
+                struct rte_ether_addr mac;
                 rte_eth_macaddr_get(port, &mac);
                 snprintf(addresses[port], sizeof(addresses[port]),
                                 "%02x:%02x:%02x:%02x:%02x:%02x\n",
@@ -641,10 +641,10 @@ onvm_stats_print_MAC(uint8_t port) {
 }
 
 void
-onvm_print_ethaddr(const char *name, struct ether_addr *eth_addr)
+onvm_print_ethaddr(const char *name, struct rte_ether_addr *eth_addr)
 {
-        char buf[ETHER_ADDR_FMT_SIZE];
-        ether_format_addr(buf, ETHER_ADDR_FMT_SIZE, eth_addr);
+        char buf[RTE_ETHER_ADDR_FMT_SIZE];
+        rte_ether_format_addr(buf, RTE_ETHER_ADDR_FMT_SIZE, eth_addr);
         fprintf(stats_out,"%s: %s\n", name, buf);
 }
 

@@ -198,10 +198,10 @@ int generate_and_transmit_pals_for_batch(__attribute__((unused))  void **pktsTX,
         static uint64_t pal_counter = 0;
         struct rte_mbuf *out_pkt = NULL;
         struct onvm_pkt_meta *pmeta = NULL;
-        struct ether_hdr *eth_hdr = NULL;
+        struct rte_ether_hdr *eth_hdr = NULL;
         pal_packet_t *p_hdr;
         size_t pkt_size = 0;
-        size_t data_len = sizeof(struct ether_hdr) + sizeof(uint16_t) + sizeof(uint16_t);
+        size_t data_len = sizeof(struct rte_ether_hdr) + sizeof(uint16_t) + sizeof(uint16_t);
         int ret = 0;
         //void *pkts[CLIENT_SHADOW_RING_SIZE];
 #ifdef ENABLE_LOCAL_LATENCY_PROFILER
@@ -226,18 +226,18 @@ int generate_and_transmit_pals_for_batch(__attribute__((unused))  void **pktsTX,
                 }
 
                 //set packet properties
-                pkt_size = sizeof(struct ether_hdr) + sizeof(pal_packet_t);
+                pkt_size = sizeof(struct rte_ether_hdr) + sizeof(pal_packet_t);
                 out_pkt->data_len = MAX(pkt_size, data_len);    //todo: crirical error if 0 or lesser than pkt_len: mooongen discards; check again and confirm
                 out_pkt->pkt_len = pkt_size;
 
                 //Set Ethernet Header info
                 eth_hdr = onvm_pkt_ether_hdr(out_pkt);
                 eth_hdr->ether_type = rte_cpu_to_be_16((ETHER_TYPE_RSYNC_DATA+1));
-                //ether_addr_copy(&ports->mac[port], &eth_hdr->s_addr);
-                //ether_addr_copy((const struct ether_addr *)&rsync_node_info.mac_addr_bytes, &eth_hdr->d_addr);
+                //rte_ether_addr_copy(&ports->mac[port], &eth_hdr->s_addr);
+                //rte_ether_addr_copy((const struct rte_ether_addr *)&rsync_node_info.mac_addr_bytes, &eth_hdr->d_addr);
 
                 //SET PAL DATA
-                p_hdr = rte_pktmbuf_mtod_offset(out_pkt, pal_packet_t*, sizeof(struct ether_hdr));
+                p_hdr = rte_pktmbuf_mtod_offset(out_pkt, pal_packet_t*, sizeof(struct rte_ether_hdr));
                 p_hdr->pal_counter = pal_counter++;
                 p_hdr->pal_info = 0xBADABADBBADCBADD;
 
@@ -1017,8 +1017,8 @@ onvm_nflib_nf_ready(struct onvm_nf_info *info) {
 
 int
 onvm_nflib_handle_msg(struct onvm_nf_msg *msg, __attribute__((unused)) struct onvm_nf_info *nf_info) {
-        switch(msg->msg_type) {
         printf("\n Received MESSAGE [%d]\n!!", msg->msg_type);
+        switch(msg->msg_type) {
         case MSG_STOP:
                 keep_running = 0;
                 if(NF_PAUSED == (nf_info->status & NF_PAUSED)) {

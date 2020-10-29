@@ -1,4 +1,3 @@
-[submodule "dpdk-1.8.0"]
+[submodule "dpdk"]
 	path = dpdk
-	url = ../../sdnfv/onvm-dpdk.git
-    branch = onvm
+	url = https://dpdk.org/git/dpdk

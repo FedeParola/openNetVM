@@ -123,7 +123,7 @@ void *onvm_socket_ctx;
 
 #ifdef ENABLE_VXLAN
 uint8_t remote_eth_addr[6] = {0x68,0x05,0xCA,0x30,0x5A,0x51};
-struct ether_addr remote_eth_addr_struct;
+struct rte_ether_addr remote_eth_addr_struct;
 #endif
 /*********************************Prototypes**********************************/
 
@@ -182,7 +182,7 @@ static int init_rsync_tx_rings(void);
 static const struct rte_eth_conf port_conf = {
         .rxmode = {
                 .mq_mode        = ETH_MQ_RX_RSS,
-                .max_rx_pkt_len = ETHER_MAX_LEN,
+                .max_rx_pkt_len = RTE_ETHER_MAX_LEN,
                 .split_hdr_size = 0,
                 .offloads       = DEV_RX_OFFLOAD_CHECKSUM,
         },
@@ -200,25 +200,25 @@ static const struct rte_eth_conf port_conf = {
         },
 };
 
-static const struct rte_eth_rxconf rx_conf = {
-        .rx_thresh = {
-                .pthresh = RX_PTHRESH,
-                .hthresh = RX_HTHRESH,
-                .wthresh = RX_WTHRESH,
-        },
-        .rx_free_thresh = 32,
-};
+// static const struct rte_eth_rxconf rx_conf = {
+//         .rx_thresh = {
+//                 .pthresh = RX_PTHRESH,
+//                 .hthresh = RX_HTHRESH,
+//                 .wthresh = RX_WTHRESH,
+//         },
+//         .rx_free_thresh = 32,
+// };
 
-static const struct rte_eth_txconf tx_conf = {
-        .tx_thresh = {
-                .pthresh = TX_PTHRESH,
-                .hthresh = TX_HTHRESH,
-                .wthresh = TX_WTHRESH,
-        },
-        .tx_free_thresh = 0,
-        .tx_rs_thresh   = 0,
-        //.txq_flags      = 0,
-};
+// static const struct rte_eth_txconf tx_conf = {
+//         .tx_thresh = {
+//                 .pthresh = TX_PTHRESH,
+//                 .hthresh = TX_HTHRESH,
+//                 .wthresh = TX_WTHRESH,
+//         },
+//         .tx_free_thresh = 0,
+//         .tx_rs_thresh   = 0,
+//         //.txq_flags      = 0,
+// };
 
 
 /*********************************Interfaces**********************************/
@@ -239,7 +239,7 @@ init(int argc, char *argv[]) {
         argv += retval;
 
 #ifdef RTE_LIBRTE_PDUMP
-        rte_pdump_init(NULL);
+        rte_pdump_init();
 #endif
         /* get total number of ports */
         total_ports = rte_eth_dev_count_avail();

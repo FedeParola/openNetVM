@@ -64,28 +64,28 @@ https://github.com/sdnfv/onvm-dpdk/blob/master/examples/tep_termination/vxlan.c
 #include "onvm_common.h"
 #include "onvm_pkt_helper.h"
 
-static uint64_t process_inner_cksums(struct ether_hdr *eth_hdr, union tunnel_offload_info *info);
+static uint64_t process_inner_cksums(struct rte_ether_hdr *eth_hdr, union tunnel_offload_info *info);
 static uint16_t get_psd_sum(void *l3_hdr, uint16_t ethertype, uint64_t ol_flags);
 
 void
-onvm_encapsulate_pkt(struct rte_mbuf *pkt, struct ether_addr *src_addr, struct ether_addr *dst_addr)
+onvm_encapsulate_pkt(struct rte_mbuf *pkt, struct rte_ether_addr *src_addr, struct rte_ether_addr *dst_addr)
 {
         uint64_t ol_flags = 0;
         uint32_t old_len = pkt->pkt_len;
         union tunnel_offload_info tx_offload = { .data = 0 };
-        struct ether_hdr *phdr = rte_pktmbuf_mtod(pkt, struct ether_hdr *);
+        struct rte_ether_hdr *phdr = rte_pktmbuf_mtod(pkt, struct rte_ether_hdr *);
         struct onvm_pkt_meta *old_meta = onvm_get_pkt_meta(pkt);
         const uint8_t src_ip[4] = VXLAN_SRC_IP;
         const uint8_t dst_ip[4] = VXLAN_DST_IP;
 
         /* Allocate space for new ethernet, IPv4, UDP and VXLAN headers */
-        size_t new_data_len = sizeof(struct ether_hdr) + sizeof(struct ipv4_hdr)
-                            + sizeof(struct udp_hdr) + sizeof(struct vxlan_hdr)
+        size_t new_data_len = sizeof(struct rte_ether_hdr) + sizeof(struct rte_ipv4_hdr)
+                            + sizeof(struct rte_udp_hdr) + sizeof(struct vxlan_hdr)
                             + sizeof(struct onvm_pkt_meta);
-        struct ether_hdr *pneth = (struct ether_hdr *) rte_pktmbuf_prepend(pkt, new_data_len);
+        struct rte_ether_hdr *pneth = (struct rte_ether_hdr *) rte_pktmbuf_prepend(pkt, new_data_len);
 
-        struct ipv4_hdr *ip = (struct ipv4_hdr *) &pneth[1];
-        struct udp_hdr *udp = (struct udp_hdr *) &ip[1];
+        struct rte_ipv4_hdr *ip = (struct rte_ipv4_hdr *) &pneth[1];
+        struct rte_udp_hdr *udp = (struct rte_udp_hdr *) &ip[1];
         struct vxlan_hdr *vxlan = (struct vxlan_hdr *) &udp[1];
         struct onvm_pkt_meta *dst_meta = (struct onvm_pkt_meta *) &vxlan[1];
         int i;
@@ -93,7 +93,7 @@ onvm_encapsulate_pkt(struct rte_mbuf *pkt, struct ether_addr *src_addr, struct e
         /* set up outer Ethernet header*/
         pneth->s_addr = *src_addr;
         pneth->d_addr = *dst_addr;
-        pneth->ether_type = rte_cpu_to_be_16(ETHER_TYPE_IPv4);
+        pneth->ether_type = rte_cpu_to_be_16(RTE_ETHER_TYPE_IPV4);
 
         /* set up outer IP header
          * since our switches are L2 switches, this really doesn't matter,
@@ -113,7 +113,7 @@ onvm_encapsulate_pkt(struct rte_mbuf *pkt, struct ether_addr *src_addr, struct e
                 ip->src_addr |= src_ip[i] << (8 * i);
                 ip->dst_addr |= dst_ip[i] << (8 * i);
         }
-        ip->total_length = rte_cpu_to_be_16(pkt->data_len - sizeof(struct ether_hdr));
+        ip->total_length = rte_cpu_to_be_16(pkt->data_len - sizeof(struct rte_ether_hdr));
 
         /* outer IP checksum */
         ol_flags |= PKT_TX_OUTER_IP_CKSUM;
@@ -126,8 +126,8 @@ onvm_encapsulate_pkt(struct rte_mbuf *pkt, struct ether_addr *src_addr, struct e
         pkt->l4_len = tx_offload.l4_len;
         pkt->l2_len += ETHER_VXLAN_HLEN;
 
-        pkt->outer_l2_len = sizeof(struct ether_hdr);
-        pkt->outer_l3_len = sizeof(struct ipv4_hdr);
+        pkt->outer_l2_len = sizeof(struct rte_ether_hdr);
+        pkt->outer_l3_len = sizeof(struct rte_ipv4_hdr);
 
         pkt->ol_flags |= ol_flags;
         pkt->tso_segsz = tx_offload.tso_segsz;
@@ -139,7 +139,7 @@ onvm_encapsulate_pkt(struct rte_mbuf *pkt, struct ether_addr *src_addr, struct e
         /*UDP HEADER*/
         udp->dgram_cksum = 0;
         udp->dgram_len = rte_cpu_to_be_16(old_len
-                                + sizeof(struct udp_hdr)
+                                + sizeof(struct rte_udp_hdr)
                                 + sizeof(struct vxlan_hdr));
 
         udp->dst_port = rte_cpu_to_be_16(DEFAULT_VXLAN_PORT);
@@ -159,7 +159,7 @@ onvm_decapsulate_pkt(struct rte_mbuf *pkt)
 {
         size_t outer_header_len;
         uint16_t dst_port;
-        struct udp_hdr *udp_hdr;
+        struct rte_udp_hdr *udp_hdr;
         struct onvm_pkt_meta *pkt_meta;
         struct onvm_pkt_meta *dst_meta;
 
@@ -175,8 +175,8 @@ onvm_decapsulate_pkt(struct rte_mbuf *pkt)
         if (dst_port != DEFAULT_VXLAN_PORT &&
                 (pkt->packet_type & RTE_PTYPE_TUNNEL_MASK) == 0)
                 return -1;
-        outer_header_len = sizeof(struct ether_hdr) + sizeof(struct ipv4_hdr)
-                            + sizeof(struct udp_hdr) + sizeof(struct vxlan_hdr);
+        outer_header_len = sizeof(struct rte_ether_hdr) + sizeof(struct rte_ipv4_hdr)
+                            + sizeof(struct rte_udp_hdr) + sizeof(struct vxlan_hdr);
 
         rte_pktmbuf_adj(pkt, outer_header_len);
 
@@ -198,51 +198,51 @@ onvm_decapsulate_pkt(struct rte_mbuf *pkt)
  * Calculate the checksum of a packet in hardware
  */
 static uint64_t
-process_inner_cksums(struct ether_hdr *eth_hdr, union tunnel_offload_info *info)
+process_inner_cksums(struct rte_ether_hdr *eth_hdr, union tunnel_offload_info *info)
 {
         void *l3_hdr = NULL;
         uint8_t l4_proto;
         uint16_t ethertype;
-        struct ipv4_hdr *ipv4_hdr;
-        struct ipv6_hdr *ipv6_hdr;
-        struct udp_hdr *udp_hdr;
-        struct tcp_hdr *tcp_hdr;
+        struct rte_ipv4_hdr *ipv4_hdr;
+        struct rte_ipv6_hdr *ipv6_hdr;
+        struct rte_udp_hdr *udp_hdr;
+        struct rte_tcp_hdr *tcp_hdr;
         struct sctp_hdr *sctp_hdr;
         uint64_t ol_flags = 0;
 
-        info->l2_len = sizeof(struct ether_hdr);
+        info->l2_len = sizeof(struct rte_ether_hdr);
         ethertype = rte_be_to_cpu_16(eth_hdr->ether_type);
 
         if (ethertype == ETHER_TYPE_VLAN) {
-                struct vlan_hdr *vlan_hdr = (struct vlan_hdr *)(eth_hdr + 1);
-                info->l2_len  += sizeof(struct vlan_hdr);
+                struct rte_vlan_hdr *vlan_hdr = (struct rte_vlan_hdr *)(eth_hdr + 1);
+                info->l2_len  += sizeof(struct rte_vlan_hdr);
                 ethertype = rte_be_to_cpu_16(vlan_hdr->eth_proto);
         }
 
         l3_hdr = (char *)eth_hdr + info->l2_len;
 
-        if (ethertype == ETHER_TYPE_IPv4) {
-                ipv4_hdr = (struct ipv4_hdr *)l3_hdr;
+        if (ethertype == RTE_ETHER_TYPE_IPV4) {
+                ipv4_hdr = (struct rte_ipv4_hdr *)l3_hdr;
                 ipv4_hdr->hdr_checksum = 0;
                 ol_flags |= PKT_TX_IPV4;
                 ol_flags |= PKT_TX_IP_CKSUM;
-                info->l3_len = sizeof(struct ipv4_hdr);
+                info->l3_len = sizeof(struct rte_ipv4_hdr);
                 l4_proto = ipv4_hdr->next_proto_id;
         } else if (ethertype == ETHER_TYPE_IPv6) {
-                ipv6_hdr = (struct ipv6_hdr *)l3_hdr;
-                info->l3_len = sizeof(struct ipv6_hdr);
+                ipv6_hdr = (struct rte_ipv6_hdr *)l3_hdr;
+                info->l3_len = sizeof(struct rte_ipv6_hdr);
                 l4_proto = ipv6_hdr->proto;
                 ol_flags |= PKT_TX_IPV6;
         } else
                 return 0; /* packet type not supported, nothing to do */
 
         if (l4_proto == IPPROTO_UDP) {
-                udp_hdr = (struct udp_hdr *)((char *)l3_hdr + info->l3_len);
+                udp_hdr = (struct rte_udp_hdr *)((char *)l3_hdr + info->l3_len);
                 ol_flags |= PKT_TX_UDP_CKSUM;
                 udp_hdr->dgram_cksum = get_psd_sum(l3_hdr,
                                 ethertype, ol_flags);
         } else if (l4_proto == IPPROTO_TCP) {
-                tcp_hdr = (struct tcp_hdr *)((char *)l3_hdr + info->l3_len);
+                tcp_hdr = (struct rte_tcp_hdr *)((char *)l3_hdr + info->l3_len);
                 ol_flags |= PKT_TX_TCP_CKSUM;
                 tcp_hdr->cksum = get_psd_sum(l3_hdr, ethertype,
                                 ol_flags);
@@ -259,7 +259,7 @@ process_inner_cksums(struct ether_hdr *eth_hdr, union tunnel_offload_info *info)
 static uint16_t
 get_psd_sum(void *l3_hdr, uint16_t ethertype, uint64_t ol_flags)
 {
-        if (ethertype == ETHER_TYPE_IPv4)
+        if (ethertype == RTE_ETHER_TYPE_IPV4)
                 return rte_ipv4_phdr_cksum(l3_hdr, ol_flags);
         else /* assume ethertype == ETHER_TYPE_IPv6 */
                 return rte_ipv6_phdr_cksum(l3_hdr, ol_flags);

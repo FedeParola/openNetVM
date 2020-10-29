@@ -667,7 +667,7 @@ void
 onvm_detect_and_set_ecn_ce(struct rte_mbuf *pkts[], uint16_t count, __attribute__((unused)) struct onvm_nf *cl) {
         uint16_t i;
 #define CE_BITS ((uint8_t)0x03)
-        struct ipv4_hdr* ip = NULL;
+        struct rte_ipv4_hdr* ip = NULL;
         for(i = 0; i < count; i++) {
                 ip = onvm_pkt_ipv4_hdr(pkts[i]);
                 if (likely(ip && (ip->next_proto_id == IP_PROTOCOL_TCP))) {

@@ -132,7 +132,7 @@ void onvm_zk_disconnect(void);
  * PARAM: the service ID to lookup
  * RETURNS: the manager ID to send this packet to, or 0 if nowhere to go
  */
-int64_t onvm_zk_lookup_service(struct rte_mbuf *pkt, uint16_t service_id, struct ether_addr *dst);
+int64_t onvm_zk_lookup_service(struct rte_mbuf *pkt, uint16_t service_id, struct rte_ether_addr *dst);
 
 /**
  * Update the stats for this NF. Store the json stats we generate in ZK for all managers

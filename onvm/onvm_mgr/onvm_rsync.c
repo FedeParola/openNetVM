@@ -159,12 +159,12 @@ static onvm_per_flow_ts_info_t   *tx_ts_table_db = NULL;
 #endif
 
 typedef struct remote_node_config {
-        uint8_t mac_addr_bytes[ETHER_ADDR_LEN];
+        uint8_t mac_addr_bytes[RTE_ETHER_ADDR_LEN];
         uint32_t ip_addr;
 }remote_node_config_t;
 static remote_node_config_t rsync_node_info = {
                 .mac_addr_bytes={0x8C, 0xDC, 0xD4, 0xAC, 0x6B, 0x21},
-                .ip_addr=IPv4(10,10,1,4)
+                .ip_addr=RTE_IPV4(10,10,1,4)
 };
 
 #define STATE_TYPE_TX_TS_TABLE  (0x01)
@@ -520,7 +520,7 @@ inline int rsync_print_rsp_packet(transfer_ack_packet_hdr_t *rsync_pkt) {
 static struct rte_mbuf* craft_state_update_packet(uint8_t port, state_tx_meta_t meta, uint8_t *pData, uint32_t data_len) {
         struct rte_mbuf *out_pkt = NULL;
         //struct onvm_pkt_meta *pmeta = NULL;
-        struct ether_hdr *eth_hdr = NULL;
+        struct rte_ether_hdr *eth_hdr = NULL;
         state_transfer_packet_hdr_t *s_hdr = NULL;
         size_t pkt_size = 0;
 
@@ -533,18 +533,18 @@ static struct rte_mbuf* craft_state_update_packet(uint8_t port, state_tx_meta_t 
         }
 
         //set packet properties
-        pkt_size = sizeof(struct ether_hdr) + sizeof(struct state_transfer_packet_hdr);
+        pkt_size = sizeof(struct rte_ether_hdr) + sizeof(struct state_transfer_packet_hdr);
         out_pkt->data_len = MAX(pkt_size, data_len);    //todo: crirical error if 0 or lesser than pkt_len: mooongen discards; check again and confirm
         out_pkt->pkt_len = pkt_size;
 
         //Set Ethernet Header info
         eth_hdr = onvm_pkt_ether_hdr(out_pkt);
-        ether_addr_copy(&ports->mac[port], &eth_hdr->s_addr);
+        rte_ether_addr_copy(&ports->mac[port], &eth_hdr->s_addr);
         eth_hdr->ether_type = rte_cpu_to_be_16(ETHER_TYPE_RSYNC_DATA);
-        ether_addr_copy((const struct ether_addr *)&rsync_node_info.mac_addr_bytes, &eth_hdr->d_addr);
+        rte_ether_addr_copy((const struct rte_ether_addr *)&rsync_node_info.mac_addr_bytes, &eth_hdr->d_addr);
 
         //SET RSYNC DATA
-        s_hdr = rte_pktmbuf_mtod_offset(out_pkt, state_transfer_packet_hdr_t*, sizeof(struct ether_hdr));
+        s_hdr = rte_pktmbuf_mtod_offset(out_pkt, state_transfer_packet_hdr_t*, sizeof(struct rte_ether_hdr));
         s_hdr->meta = meta;
         bswap_rsync_hdr_data(&s_hdr->meta, 1);
         if(data_len) {
@@ -1414,13 +1414,13 @@ int rsync_process_rsync_in_pkts(__attribute__((unused)) struct thread_info *rx, 
         state_transfer_packet_hdr_t *rsync_req = NULL;
 
         //Validate packet properties
-        //if(pkts[i]->pkt_len < (sizeof(struct ether_hdr) + sizeof(struct transfer_ack_packet_hdr_t));
-        //if(pkts[i]->data_len < (sizeof(struct ether_hdr) + sizeof(struct state_transfer_packet_hdr_t));
+        //if(pkts[i]->pkt_len < (sizeof(struct rte_ether_hdr) + sizeof(struct transfer_ack_packet_hdr_t));
+        //if(pkts[i]->data_len < (sizeof(struct rte_ether_hdr) + sizeof(struct state_transfer_packet_hdr_t));
 
         //process each packet
         for(i=0; i < rx_count; i++) {
-                //eth = rte_pktmbuf_mtod(pkts[i], struct ether_hdr *);
-                rsycn_pkt = (transfer_ack_packet_hdr_t*)(rte_pktmbuf_mtod(pkts[i], uint8_t*) + sizeof(struct ether_hdr));
+                //eth = rte_pktmbuf_mtod(pkts[i], struct rte_ether_hdr *);
+                rsycn_pkt = (transfer_ack_packet_hdr_t*)(rte_pktmbuf_mtod(pkts[i], uint8_t*) + sizeof(struct rte_ether_hdr));
 #ifdef ENABLE_EXTRA_RSYNC_PRINT_MSGS
                 printf("Received RSYNC Message Type [%d]:\n",rsync_print_rsp_packet(rsycn_pkt));
 #endif
@@ -1430,7 +1430,7 @@ int rsync_process_rsync_in_pkts(__attribute__((unused)) struct thread_info *rx, 
                                 rsync_process_rsp_packet(rsycn_pkt);
                         }
                         else {
-                                rsync_req = (state_transfer_packet_hdr_t*)(rte_pktmbuf_mtod(pkts[i], uint8_t*) + sizeof(struct ether_hdr));
+                                rsync_req = (state_transfer_packet_hdr_t*)(rte_pktmbuf_mtod(pkts[i], uint8_t*) + sizeof(struct rte_ether_hdr));
                                 rsync_process_req_packet(rsync_req, pkts[i]->port, rte_be_to_cpu_16(pkts[i]->data_len));
                                 //process rsync_req packet: check the nf_svd_id; extract data and update mempool memory of respective NFs
                                 //Once you receive last flag or flag with different Transaction ID then, Generate response packet for the (current) marked transaction.

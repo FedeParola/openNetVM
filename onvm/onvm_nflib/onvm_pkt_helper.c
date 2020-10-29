@@ -57,8 +57,8 @@
 
 int
 onvm_pkt_mac_addr_swap(struct rte_mbuf* pkt, unsigned dst_port) {
-	struct ether_hdr *eth;
-	struct ether_addr addr;
+	struct rte_ether_hdr *eth;
+	struct rte_ether_addr addr = {0};
 
 	if (unlikely(pkt == NULL)) { // We do not expect to swap macs for empty packets
 		return -1;
@@ -67,25 +67,25 @@ onvm_pkt_mac_addr_swap(struct rte_mbuf* pkt, unsigned dst_port) {
 	/*
 	 * Get the ethernet header from the pkt
 	 */
-	eth = rte_pktmbuf_mtod(pkt, struct ether_hdr *);
+	eth = rte_pktmbuf_mtod(pkt, struct rte_ether_hdr *);
 
 	/*
 	 * Copy the source mac address to the destination field.
 	 */
-	ether_addr_copy(&eth->s_addr, &eth->d_addr);
+	rte_ether_addr_copy(&eth->s_addr, &eth->d_addr);
 
 	/*
 	 * Get the mac address of the current port to send out of
 	 * and set the source field to it.
 	 */
 	rte_eth_macaddr_get(dst_port, &eth->s_addr);
-	ether_addr_copy(&addr, &eth->s_addr);
+	rte_ether_addr_copy(&addr, &eth->s_addr);
 
 	return 0;
 }
 int
 onvm_pkt_set_mac_addr(struct rte_mbuf* pkt, unsigned src_port_id, unsigned dst_port_id, struct port_info *ports) {
-        struct ether_hdr *eth;
+        struct rte_ether_hdr *eth;
 
         if (unlikely(pkt == NULL)) { // We do not expect to swap macs for empty packets
                 return -1;
@@ -100,15 +100,15 @@ onvm_pkt_set_mac_addr(struct rte_mbuf* pkt, unsigned src_port_id, unsigned dst_p
          * Get the MAC addresses of the src and destination NIC ports,
          * and set the ethernet header's fields to them.
          */
-        ether_addr_copy(&ports->mac[src_port_id], &eth->s_addr);
-        ether_addr_copy(&ports->mac[dst_port_id], &eth->d_addr);
+        rte_ether_addr_copy(&ports->mac[src_port_id], &eth->s_addr);
+        rte_ether_addr_copy(&ports->mac[dst_port_id], &eth->d_addr);
 
         return 0;
 }
 
 int
 onvm_pkt_swap_src_mac_addr(struct rte_mbuf* pkt, unsigned dst_port_id, struct port_info *ports) {
-        struct ether_hdr *eth;
+        struct rte_ether_hdr *eth;
 
         if (unlikely(pkt == NULL)) { // We do not expect to swap macs for empty packets
                 return -1;
@@ -122,20 +122,20 @@ onvm_pkt_swap_src_mac_addr(struct rte_mbuf* pkt, unsigned dst_port_id, struct po
         /*
          * Copy the source mac address to the destination field.
          */
-        ether_addr_copy(&eth->s_addr, &eth->d_addr);
+        rte_ether_addr_copy(&eth->s_addr, &eth->d_addr);
 
         /*
          * Get the mac address of the specified destination port id
          * and set the source field to it.
          */
-        ether_addr_copy(&ports->mac[dst_port_id], &eth->s_addr);
+        rte_ether_addr_copy(&ports->mac[dst_port_id], &eth->s_addr);
 
         return 0;
 }
 
 int
 onvm_pkt_swap_dst_mac_addr(struct rte_mbuf* pkt, unsigned src_port_id, struct port_info *ports) {
-        struct ether_hdr *eth;
+        struct rte_ether_hdr *eth;
 
         if (unlikely(pkt == NULL)) { // We do not expect to swap macs for empty packets
                 return -1;
@@ -149,28 +149,28 @@ onvm_pkt_swap_dst_mac_addr(struct rte_mbuf* pkt, unsigned src_port_id, struct po
         /*
          * Copy the destination mac address to the source field.
          */
-        ether_addr_copy(&eth->d_addr, &eth->s_addr);
+        rte_ether_addr_copy(&eth->d_addr, &eth->s_addr);
 
         /*
          * Get the mac address of specified source port id
          * and set the destination field to it.
          */
-        ether_addr_copy(&ports->mac[src_port_id], &eth->d_addr);
+        rte_ether_addr_copy(&ports->mac[src_port_id], &eth->d_addr);
 
         return 0;
 }
 
-struct ether_hdr*
+struct rte_ether_hdr*
 onvm_pkt_ether_hdr(struct rte_mbuf* pkt) {
         if (unlikely(pkt == NULL)) {
                 return NULL;
         }
-        return rte_pktmbuf_mtod(pkt, struct ether_hdr *);
+        return rte_pktmbuf_mtod(pkt, struct rte_ether_hdr* );
 }
 
-struct tcp_hdr*
+struct rte_tcp_hdr*
 onvm_pkt_tcp_hdr(struct rte_mbuf* pkt) {
-        struct ipv4_hdr* ipv4 = onvm_pkt_ipv4_hdr(pkt);
+        struct rte_ipv4_hdr* ipv4 = onvm_pkt_ipv4_hdr(pkt);
 
         if (unlikely(ipv4 == NULL)) {  // Since we aren't dealing with IPv6 packets for now, we can ignore anything that isn't IPv4
                 return NULL;
@@ -180,13 +180,13 @@ onvm_pkt_tcp_hdr(struct rte_mbuf* pkt) {
                 return NULL;
         }
 
-        uint8_t* pkt_data = rte_pktmbuf_mtod(pkt, uint8_t*) + sizeof(struct ether_hdr) + sizeof(struct ipv4_hdr);
-        return (struct tcp_hdr*)pkt_data;
+        uint8_t* pkt_data = rte_pktmbuf_mtod(pkt, uint8_t*) + sizeof(struct rte_ether_hdr) + sizeof(struct rte_ipv4_hdr);
+        return (struct rte_tcp_hdr*)pkt_data;
 }
 
-struct udp_hdr*
+struct rte_udp_hdr*
 onvm_pkt_udp_hdr(struct rte_mbuf* pkt) {
-        struct ipv4_hdr* ipv4 = onvm_pkt_ipv4_hdr(pkt);
+        struct rte_ipv4_hdr* ipv4 = onvm_pkt_ipv4_hdr(pkt);
 
         if (unlikely(ipv4 == NULL)) {  // Since we aren't dealing with IPv6 packets for now, we can ignore anything that isn't IPv4
                 return NULL;
@@ -196,19 +196,19 @@ onvm_pkt_udp_hdr(struct rte_mbuf* pkt) {
                 return NULL;
         }
 
-        uint8_t* pkt_data = rte_pktmbuf_mtod(pkt, uint8_t*) + sizeof(struct ether_hdr) + sizeof(struct ipv4_hdr);
-        return (struct udp_hdr*)pkt_data;
+        uint8_t* pkt_data = rte_pktmbuf_mtod(pkt, uint8_t*) + sizeof(struct rte_ether_hdr) + sizeof(struct rte_ipv4_hdr);
+        return (struct rte_udp_hdr*)pkt_data;
 }
 
-struct ipv4_hdr*
+struct rte_ipv4_hdr*
 onvm_pkt_ipv4_hdr(struct rte_mbuf* pkt) {
 
-        struct ether_hdr *eth = rte_pktmbuf_mtod(pkt, struct ether_hdr *);
-        struct ipv4_hdr* ipv4 = (struct ipv4_hdr*)(rte_pktmbuf_mtod(pkt, uint8_t*) + sizeof(struct ether_hdr));
+        struct rte_ether_hdr *eth = rte_pktmbuf_mtod(pkt, struct rte_ether_hdr *);
+        struct rte_ipv4_hdr* ipv4 = (struct rte_ipv4_hdr*)(rte_pktmbuf_mtod(pkt, uint8_t*) + sizeof(struct rte_ether_hdr));
 
-        if (ETHER_TYPE_VLAN == rte_be_to_cpu_16(eth->ether_type)) {
-                //ipv4 = (struct ipv4_hdr*)(rte_pktmbuf_mtod(ipv4, uint8_t*) + sizeof(struct vlan_hdr));
-                ipv4 = (struct ipv4_hdr*)(rte_pktmbuf_mtod(pkt, uint8_t*) + sizeof(struct ether_hdr)+sizeof(struct vlan_hdr));
+        if (RTE_ETHER_TYPE_VLAN == rte_be_to_cpu_16(eth->ether_type)) {
+                //ipv4 = (struct rte_ipv4_hdr*)(rte_pktmbuf_mtod(ipv4, uint8_t*) + sizeof(struct rte_vlan_hdr));
+                ipv4 = (struct rte_ipv4_hdr*)(rte_pktmbuf_mtod(pkt, uint8_t*) + sizeof(struct rte_ether_hdr)+sizeof(struct rte_vlan_hdr));
         }
 
         /* In an IP packet, the first 4 bits determine the version.
@@ -221,13 +221,13 @@ onvm_pkt_ipv4_hdr(struct rte_mbuf* pkt) {
         }
         return ipv4;
 }
-struct vlan_hdr*
+struct rte_vlan_hdr*
 onvm_pkt_vlan_hdr(struct rte_mbuf* pkt) {
 
-        struct ether_hdr *eth = rte_pktmbuf_mtod(pkt, struct ether_hdr *);
-        struct vlan_hdr* vlan = (struct vlan_hdr*)(rte_pktmbuf_mtod(pkt, uint8_t*) + sizeof(struct ether_hdr));
+        struct rte_ether_hdr *eth = rte_pktmbuf_mtod(pkt, struct rte_ether_hdr *);
+        struct rte_vlan_hdr* vlan = (struct rte_vlan_hdr*)(rte_pktmbuf_mtod(pkt, uint8_t*) + sizeof(struct rte_ether_hdr));
 
-        if (ETHER_TYPE_VLAN != rte_be_to_cpu_16(eth->ether_type)) {
+        if (RTE_ETHER_TYPE_VLAN != rte_be_to_cpu_16(eth->ether_type)) {
                 return NULL;
         }
         return vlan;
@@ -251,24 +251,24 @@ onvm_pkt_is_ipv4(struct rte_mbuf* pkt) {
 
 void
 onvm_pkt_print(struct rte_mbuf* pkt) {
-        struct ipv4_hdr* ipv4 = onvm_pkt_ipv4_hdr(pkt);
+        struct rte_ipv4_hdr* ipv4 = onvm_pkt_ipv4_hdr(pkt);
         if (likely(ipv4 != NULL)) {
                 onvm_pkt_print_ipv4(ipv4);
         }
 
-        struct tcp_hdr* tcp = onvm_pkt_tcp_hdr(pkt);
+        struct rte_tcp_hdr* tcp = onvm_pkt_tcp_hdr(pkt);
         if (tcp != NULL) {
                 onvm_pkt_print_tcp(tcp);
         }
 
-        struct udp_hdr* udp = onvm_pkt_udp_hdr(pkt);
+        struct rte_udp_hdr* udp = onvm_pkt_udp_hdr(pkt);
         if (udp != NULL) {
                 onvm_pkt_print_udp(udp);
         }
 }
 
 void
-onvm_pkt_print_tcp(struct tcp_hdr* hdr) {
+onvm_pkt_print_tcp(struct rte_tcp_hdr* hdr) {
         printf("Source Port: %" PRIu16 "\n", rte_be_to_cpu_16(hdr->src_port));
         printf("Destination Port: %" PRIu16 "\n", rte_be_to_cpu_16(hdr->dst_port));
         printf("Sequence number: %" PRIu32 "\n", rte_be_to_cpu_32(hdr->sent_seq));
@@ -299,7 +299,7 @@ onvm_pkt_print_tcp(struct tcp_hdr* hdr) {
 }
 
 void
-onvm_pkt_print_udp(struct udp_hdr* hdr) {
+onvm_pkt_print_udp(struct rte_udp_hdr* hdr) {
         printf("Source Port: %" PRIu16 "\n", hdr->src_port);
         printf("Destination Port: %" PRIu16 "\n", hdr->dst_port);
         printf("Length: %" PRIu16 "\n", hdr->dgram_len);
@@ -307,7 +307,7 @@ onvm_pkt_print_udp(struct udp_hdr* hdr) {
 }
 
 void
-onvm_pkt_print_ipv4(struct ipv4_hdr* hdr) {
+onvm_pkt_print_ipv4(struct rte_ipv4_hdr* hdr) {
         printf("IHL: %" PRIu8 "\n", hdr->version_ihl & 0b1111);
         printf("DSCP: %" PRIu8 "\n", hdr->type_of_service & 0b111111);
         printf("ECN: %" PRIu8 "\n", (hdr->type_of_service >> 6) & 0b11);
@@ -342,7 +342,7 @@ onvm_pkt_print_ipv4(struct ipv4_hdr* hdr) {
                 hdr->dst_addr & 0xFF, (hdr->dst_addr >> 8) & 0xFF, (hdr->dst_addr >> 16) & 0xFF, (hdr->dst_addr >> 24) & 0xFF);
 }
 
-void onvm_pkt_print_ether(struct ether_hdr* hdr) {
+void onvm_pkt_print_ether(struct rte_ether_hdr* hdr) {
         const char *type = NULL;
         if (unlikely(hdr == NULL)) {
                 return;
@@ -356,28 +356,28 @@ void onvm_pkt_print_ether(struct ether_hdr* hdr) {
                         hdr->d_addr.addr_bytes[2], hdr->d_addr.addr_bytes[3],
                         hdr->d_addr.addr_bytes[4], hdr->d_addr.addr_bytes[5]);
         switch(hdr->ether_type) {
-                case ETHER_TYPE_IPv4:
+                case RTE_ETHER_TYPE_IPV4:
                         type = "IPv4";
                         break;
-                case ETHER_TYPE_IPv6:
+                case RTE_ETHER_TYPE_IPV6:
                         type = "IPv6";
                         break;
-                case ETHER_TYPE_ARP:
+                case RTE_ETHER_TYPE_ARP:
                         type = "ARP";
                         break;
-                case ETHER_TYPE_RARP:
+                case RTE_ETHER_TYPE_RARP:
                         type = "Reverse ARP";
                         break;
-                case ETHER_TYPE_VLAN:
+                case RTE_ETHER_TYPE_VLAN:
                         type = "VLAN";
                         break;
-                case ETHER_TYPE_1588:
+                case RTE_ETHER_TYPE_1588:
                         type = "1588 Precise Time";
                         break;
-                case ETHER_TYPE_SLOW:
+                case RTE_ETHER_TYPE_SLOW:
                         type = "Slow";
                         break;
-                case ETHER_TYPE_TEB:
+                case RTE_ETHER_TYPE_TEB:
                         type = "Transparent Ethernet Bridging (TEP)";
                         break;
                 default:
@@ -400,25 +400,25 @@ onvm_pkt_parse_ip(char *ip_str, uint32_t *dest) {
         if (ret != 4) {
                 return -1;
         }
-        *dest = IPv4(ip[0], ip[1], ip[2], ip[3]);
+        *dest = RTE_IPV4(ip[0], ip[1], ip[2], ip[3]);
         return 0;
 }
 
 int 
 onvm_pkt_parse_mac(char * mac_str, uint8_t* dest) {
         int ret, i;
-        int mac[ETHER_ADDR_LEN];
+        int mac[RTE_ETHER_ADDR_LEN];
 
         if (mac_str == NULL || dest == NULL) {
                 return -1;
         }
 
         ret = sscanf(mac_str, "%x:%x:%x:%x:%x:%x", &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
-        if (ret != ETHER_ADDR_LEN) {
+        if (ret != RTE_ETHER_ADDR_LEN) {
                 return -1;
         }
 
-        for (i = 0; i < ETHER_ADDR_LEN; i++){
+        for (i = 0; i < RTE_ETHER_ADDR_LEN; i++){
                 dest[i] = mac[i];
         }
         return 0;
@@ -449,7 +449,7 @@ onvm_pkt_get_checksum_offload_flags(uint8_t port_id) {
  * except that this implementation can process packets with IP options.
  */
 static uint16_t
-calculate_tcpudp_cksum(const struct ipv4_hdr *ip, const void *l4_hdr, const uint32_t l3_len, uint8_t protocol) {
+calculate_tcpudp_cksum(const struct rte_ipv4_hdr *ip, const void *l4_hdr, const uint32_t l3_len, uint8_t protocol) {
         uint32_t cksum = 0;
         uint32_t l4_len = ip->total_length - l3_len;
 
@@ -485,7 +485,7 @@ calculate_tcpudp_cksum(const struct ipv4_hdr *ip, const void *l4_hdr, const uint
  * exception that this implementation can process packets with IP options.
  */
 static uint16_t
-calculate_ip_cksum(const struct ipv4_hdr *ip, const uint32_t l3_len) {
+calculate_ip_cksum(const struct rte_ipv4_hdr *ip, const uint32_t l3_len) {
         uint16_t cksum = rte_raw_cksum(ip, l3_len);
         return (cksum == 0xffff) ? cksum : ~cksum;
 }
@@ -493,13 +493,13 @@ calculate_ip_cksum(const struct ipv4_hdr *ip, const uint32_t l3_len) {
 void
 onvm_pkt_set_checksums(struct rte_mbuf *pkt) {
         uint32_t hw_cksum_support = onvm_pkt_get_checksum_offload_flags(pkt->port);
-        struct ipv4_hdr *ip = onvm_pkt_ipv4_hdr(pkt);
-        struct tcp_hdr *tcp = onvm_pkt_tcp_hdr(pkt);
-        struct udp_hdr *udp = onvm_pkt_udp_hdr(pkt);
+        struct rte_ipv4_hdr *ip = onvm_pkt_ipv4_hdr(pkt);
+        struct rte_tcp_hdr *tcp = onvm_pkt_tcp_hdr(pkt);
+        struct rte_udp_hdr *udp = onvm_pkt_udp_hdr(pkt);
 
         if (ip != NULL) {
                 ip->hdr_checksum = 0;
-                pkt->l2_len = sizeof(struct ether_hdr);
+                pkt->l2_len = sizeof(struct rte_ether_hdr);
                 pkt->l3_len = (ip->version_ihl & 0b1111) * 4;
                 pkt->ol_flags |= PKT_TX_IPV4;
 
@@ -540,25 +540,25 @@ onvm_pkt_set_checksums(struct rte_mbuf *pkt) {
 
 int
 onvm_tcp_con_close(struct rte_mbuf* pkt) {
-        struct tcp_hdr *tcp_hdr;
+        struct rte_tcp_hdr *tcp_hdr;
         tcp_hdr = onvm_pkt_tcp_hdr(pkt);
 
         if (unlikely(tcp_hdr == NULL)) {
                 return 0;
         }
-        return ((tcp_hdr->tcp_flags & TCP_FIN_FLAG));
-        //return ((tcp_hdr->tcp_flags & TCP_FIN_FLAG) == (TCP_FIN_FLAG));
+        return ((tcp_hdr->tcp_flags & RTE_TCP_FIN_FLAG));
+        //return ((tcp_hdr->tcp_flags & RTE_TCP_FIN_FLAG) == (RTE_TCP_FIN_FLAG));
 }
 
 int
 onvm_tcp_ack_close(struct rte_mbuf* pkt, uint8_t lflags) {
-        struct tcp_hdr *tcp_hdr;
+        struct rte_tcp_hdr *tcp_hdr;
         tcp_hdr = onvm_pkt_tcp_hdr(pkt);
 
         if (tcp_hdr == NULL) {
                 return 0;
         }
 
-        return ((lflags & TCP_FIN_FLAG) && (tcp_hdr->tcp_flags & TCP_ACK_FLAG) == TCP_ACK_FLAG);
-        //return ((tcp_hdr->tcp_flags & TCP_ACK_FLAG) == TCP_ACK_FLAG);
+        return ((lflags & RTE_TCP_FIN_FLAG) && (tcp_hdr->tcp_flags & RTE_TCP_ACK_FLAG) == RTE_TCP_ACK_FLAG);
+        //return ((tcp_hdr->tcp_flags & RTE_TCP_ACK_FLAG) == RTE_TCP_ACK_FLAG);
 }

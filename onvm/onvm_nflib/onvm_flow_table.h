@@ -142,18 +142,18 @@ onvm_ft_get_data(struct onvm_ft* table, int32_t index) {
 
 static inline int
 onvm_ft_fill_key(struct onvm_ft_ipv4_5tuple *key, struct rte_mbuf *pkt) {
-        struct ipv4_hdr *ipv4_hdr;
-        struct tcp_hdr *tcp_hdr;
-        struct udp_hdr *udp_hdr;
+        struct rte_ipv4_hdr *rte_ipv4_hdr;
+        struct rte_tcp_hdr *tcp_hdr;
+        struct rte_udp_hdr *udp_hdr;
 
         if (unlikely(!onvm_pkt_is_ipv4(pkt))) {
                 return -EPROTONOSUPPORT;
         }
-        ipv4_hdr = onvm_pkt_ipv4_hdr(pkt);
+        rte_ipv4_hdr = onvm_pkt_ipv4_hdr(pkt);
         memset(key, 0, sizeof(struct onvm_ft_ipv4_5tuple));
-        key->proto  = ipv4_hdr->next_proto_id;
-        key->src_addr = ipv4_hdr->src_addr;
-        key->dst_addr = ipv4_hdr->dst_addr;
+        key->proto  = rte_ipv4_hdr->next_proto_id;
+        key->src_addr = rte_ipv4_hdr->src_addr;
+        key->dst_addr = rte_ipv4_hdr->dst_addr;
         if (key->proto == IP_PROTOCOL_TCP) {
                 tcp_hdr = onvm_pkt_tcp_hdr(pkt);
                 key->src_port = tcp_hdr->src_port;

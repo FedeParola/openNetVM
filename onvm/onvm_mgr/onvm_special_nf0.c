@@ -232,7 +232,7 @@ static int onv_pkt_send_on_alt_port(__attribute__((unused)) struct thread_info *
                meta->destination = pkts[i]->port;
 
                // Filter out BFD and RSYNC packets to avoid looping them around!
-               struct ether_hdr *eth = rte_pktmbuf_mtod(pkts[i], struct ether_hdr *);
+               struct rte_ether_hdr *eth = rte_pktmbuf_mtod(pkts[i], struct rte_ether_hdr *);
                if(ETHER_TYPE_RSYNC_DATA == rte_be_to_cpu_16(eth->ether_type)) {
                        //pkts_out[j++]=pkt;
                        //meta->action = ONVM_NF_ACTION_DROP;
@@ -355,11 +355,11 @@ parse_port_ip_map(void) {
         return;
 }
 static int
-send_arp_reply_v2(int req_port, int arp_port, struct ether_addr *tha, uint32_t tip) {
+send_arp_reply_v2(int req_port, int arp_port, struct rte_ether_addr *tha, uint32_t tip) {
         struct rte_mbuf *out_pkt = NULL;
         struct onvm_pkt_meta *pmeta = NULL;
-        struct ether_hdr *eth_hdr = NULL;
-        struct arp_hdr *out_arp_hdr = NULL;
+        struct rte_ether_hdr *eth_hdr = NULL;
+        struct rte_arp_hdr *out_arp_hdr = NULL;
 
         size_t pkt_size = 0;
 
@@ -373,30 +373,30 @@ send_arp_reply_v2(int req_port, int arp_port, struct ether_addr *tha, uint32_t t
                 return -1;
         }
 
-        pkt_size = sizeof(struct ether_hdr) + sizeof(struct arp_hdr);
+        pkt_size = sizeof(struct rte_ether_hdr) + sizeof(struct rte_arp_hdr);
         out_pkt->data_len = pkt_size;
         out_pkt->pkt_len = pkt_size;
 
         //SET ETHER HEADER INFO
         eth_hdr = onvm_pkt_ether_hdr(out_pkt);
-        ether_addr_copy(&ports->mac[req_port], &eth_hdr->s_addr);
-        eth_hdr->ether_type = rte_cpu_to_be_16(ETHER_TYPE_ARP);
-        ether_addr_copy(tha, &eth_hdr->d_addr);
+        rte_ether_addr_copy(&ports->mac[req_port], &eth_hdr->s_addr);
+        eth_hdr->ether_type = rte_cpu_to_be_16(RTE_ETHER_TYPE_ARP);
+        rte_ether_addr_copy(tha, &eth_hdr->d_addr);
 
         //SET ARP HDR INFO
-        out_arp_hdr = rte_pktmbuf_mtod_offset(out_pkt, struct arp_hdr *, sizeof(struct ether_hdr));
+        out_arp_hdr = rte_pktmbuf_mtod_offset(out_pkt, struct rte_arp_hdr *, sizeof(struct rte_ether_hdr));
 
-        out_arp_hdr->arp_hrd = rte_cpu_to_be_16(ARP_HRD_ETHER);
-        out_arp_hdr->arp_pro = rte_cpu_to_be_16(ETHER_TYPE_IPv4);
-        out_arp_hdr->arp_hln = 6;
-        out_arp_hdr->arp_pln = sizeof(uint32_t);
-        out_arp_hdr->arp_op = rte_cpu_to_be_16(ARP_OP_REPLY);
+        out_arp_hdr->arp_hardware = rte_cpu_to_be_16(RTE_ARP_HRD_ETHER);
+        out_arp_hdr->arp_protocol = rte_cpu_to_be_16(RTE_ETHER_TYPE_IPV4);
+        out_arp_hdr->arp_hlen = 6;
+        out_arp_hdr->arp_plen = sizeof(uint32_t);
+        out_arp_hdr->arp_opcode = rte_cpu_to_be_16(RTE_ARP_OP_REPLY);
 
-        ether_addr_copy(&ports->mac[arp_port], &out_arp_hdr->arp_data.arp_sha);
+        rte_ether_addr_copy(&ports->mac[arp_port], &out_arp_hdr->arp_data.arp_sha);
         out_arp_hdr->arp_data.arp_sip = state_info->source_ips[ports->id[arp_port]];
 
         out_arp_hdr->arp_data.arp_tip = tip;
-        ether_addr_copy(tha, &out_arp_hdr->arp_data.arp_tha);
+        rte_ether_addr_copy(tha, &out_arp_hdr->arp_data.arp_tha);
 
         //SEND PACKET OUT/SET METAINFO
         pmeta = onvm_get_pkt_meta(out_pkt);
@@ -413,13 +413,13 @@ send_arp_reply_v2(int req_port, int arp_port, struct ether_addr *tha, uint32_t t
         return 0; //onvm_nflib_return_pkt(out_pkt);
 }
 //static
-int send_arp_reply(int port, struct ether_addr *tha, uint32_t tip);
+int send_arp_reply(int port, struct rte_ether_addr *tha, uint32_t tip);
 //static
-int send_arp_reply(int port, struct ether_addr *tha, uint32_t tip) {
+int send_arp_reply(int port, struct rte_ether_addr *tha, uint32_t tip) {
         struct rte_mbuf *out_pkt = NULL;
         struct onvm_pkt_meta *pmeta = NULL;
-        struct ether_hdr *eth_hdr = NULL;
-        struct arp_hdr *out_arp_hdr = NULL;
+        struct rte_ether_hdr *eth_hdr = NULL;
+        struct rte_arp_hdr *out_arp_hdr = NULL;
 
         size_t pkt_size = 0;
 
@@ -433,30 +433,30 @@ int send_arp_reply(int port, struct ether_addr *tha, uint32_t tip) {
                 return -1;
         }
 
-        pkt_size = sizeof(struct ether_hdr) + sizeof(struct arp_hdr);
+        pkt_size = sizeof(struct rte_ether_hdr) + sizeof(struct rte_arp_hdr);
         out_pkt->data_len = pkt_size;
         out_pkt->pkt_len = pkt_size;
 
         //SET ETHER HEADER INFO
         eth_hdr = onvm_pkt_ether_hdr(out_pkt);
-        ether_addr_copy(&ports->mac[port], &eth_hdr->s_addr);
-        eth_hdr->ether_type = rte_cpu_to_be_16(ETHER_TYPE_ARP);
-        ether_addr_copy(tha, &eth_hdr->d_addr);
+        rte_ether_addr_copy(&ports->mac[port], &eth_hdr->s_addr);
+        eth_hdr->ether_type = rte_cpu_to_be_16(RTE_ETHER_TYPE_ARP);
+        rte_ether_addr_copy(tha, &eth_hdr->d_addr);
 
         //SET ARP HDR INFO
-        out_arp_hdr = rte_pktmbuf_mtod_offset(out_pkt, struct arp_hdr *, sizeof(struct ether_hdr));
+        out_arp_hdr = rte_pktmbuf_mtod_offset(out_pkt, struct rte_arp_hdr *, sizeof(struct rte_ether_hdr));
 
-        out_arp_hdr->arp_hrd = rte_cpu_to_be_16(ARP_HRD_ETHER);
-        out_arp_hdr->arp_pro = rte_cpu_to_be_16(ETHER_TYPE_IPv4);
-        out_arp_hdr->arp_hln = 6;
-        out_arp_hdr->arp_pln = sizeof(uint32_t);
-        out_arp_hdr->arp_op = rte_cpu_to_be_16(ARP_OP_REPLY);
+        out_arp_hdr->arp_hardware = rte_cpu_to_be_16(RTE_ARP_HRD_ETHER);
+        out_arp_hdr->arp_protocol = rte_cpu_to_be_16(RTE_ETHER_TYPE_IPV4);
+        out_arp_hdr->arp_hlen = 6;
+        out_arp_hdr->arp_plen = sizeof(uint32_t);
+        out_arp_hdr->arp_opcode = rte_cpu_to_be_16(RTE_ARP_OP_REPLY);
 
-        ether_addr_copy(&ports->mac[port], &out_arp_hdr->arp_data.arp_sha);
+        rte_ether_addr_copy(&ports->mac[port], &out_arp_hdr->arp_data.arp_sha);
         out_arp_hdr->arp_data.arp_sip = state_info->source_ips[ports->id[port]];
 
         out_arp_hdr->arp_data.arp_tip = tip;
-        ether_addr_copy(tha, &out_arp_hdr->arp_data.arp_tha);
+        rte_ether_addr_copy(tha, &out_arp_hdr->arp_data.arp_tha);
 
         //SEND PACKET OUT/SET METAINFO
         pmeta = onvm_get_pkt_meta(out_pkt);
@@ -473,14 +473,14 @@ int send_arp_reply(int port, struct ether_addr *tha, uint32_t tip) {
 }
 static int try_check_and_send_arp_response(struct rte_mbuf* pkt, struct onvm_pkt_meta* meta);
 static int try_check_and_send_arp_response(struct rte_mbuf* pkt, struct onvm_pkt_meta* meta) {
-        struct ether_hdr *eth_hdr = onvm_pkt_ether_hdr(pkt);
-        struct arp_hdr *in_arp_hdr = NULL;
+        struct rte_ether_hdr *eth_hdr = onvm_pkt_ether_hdr(pkt);
+        struct rte_arp_hdr *in_arp_hdr = NULL;
         int result = -1;
         if(NULL == eth_hdr) return -1;
 
         //First checks to see if pkt is of type ARP, then whether the target IP of packet matches machine IP
-        if (rte_cpu_to_be_16(eth_hdr->ether_type) == ETHER_TYPE_ARP) {
-                in_arp_hdr = rte_pktmbuf_mtod_offset(pkt, struct arp_hdr *, sizeof(struct ether_hdr));
+        if (rte_cpu_to_be_16(eth_hdr->ether_type) == RTE_ETHER_TYPE_ARP) {
+                in_arp_hdr = rte_pktmbuf_mtod_offset(pkt, struct rte_arp_hdr *, sizeof(struct rte_ether_hdr));
                 if(NULL == in_arp_hdr) return -1;
                 int i = 0;
                 for(;i<ports->num_ports;i++) {
@@ -866,7 +866,7 @@ static inline int onvm_util_plain_pcap_replay(uint8_t port, uint64_t max_duratio
         struct rte_mbuf *pkts[PACKET_READ_SIZE];
         struct pcap_pkthdr *hdr;
         //struct timeval now;
-        //struct ipv4_hdr * ip_h;
+        //struct rte_ipv4_hdr * ip_h;
         void * pkt;
         char err_buf[256];
         int continue_replay=1;
@@ -968,7 +968,7 @@ static inline int onvm_util_plain_pcap_replay(uint8_t port, uint64_t max_duratio
         struct rte_mbuf *pkts[PACKET_READ_SIZE];
         struct pcap_pkthdr *hdr;
         //struct timeval now;
-        //struct ipv4_hdr * ip_h;
+        //struct rte_ipv4_hdr * ip_h;
         void * pkt;
         char err_buf[256];
         int continue_replay=1;
@@ -1091,7 +1091,7 @@ int process_special_nf0_rx_packets(void) {
 uint16_t nic_port = DISTRIBUTED_NIC_PORT;
         int ret;
 #ifdef ENABLE_ZOOKEEPER
-        struct ether_addr dst_addr;
+        struct rte_ether_addr dst_addr;
         uint16_t dst_service_id;
         int64_t remote_id;
 #endif
@@ -1113,14 +1113,14 @@ uint16_t nic_port = DISTRIBUTED_NIC_PORT;
                 /* Give each packet to the specific processing function : Based on ETH_TYPE and Registered MGR Services */
                 uint32_t i = 0;
                 for (; i < nb_pkts; i++) {
-                        struct ether_hdr *eth = rte_pktmbuf_mtod(pkts[i], struct ether_hdr *);
+                        struct rte_ether_hdr *eth = rte_pktmbuf_mtod(pkts[i], struct rte_ether_hdr *);
                         meta = onvm_get_pkt_meta((struct rte_mbuf*)pkts[i]);
                         if(ONVM_NF_ACTION_DROP == meta->action) {
                                 onvm_pkt_drop(pkts[i]); continue;
                         }
                         switch(rte_be_to_cpu_16(eth->ether_type)) {
                         default:
-                        case ETHER_TYPE_IPv4:
+                        case RTE_ETHER_TYPE_IPV4:
 #ifdef ENABLE_VXLAN
                                 /* Encapsulate vxlan pkt */
                                 printf("before encap\n");
@@ -1161,7 +1161,7 @@ uint16_t nic_port = DISTRIBUTED_NIC_PORT;
                                 }
 #endif
                                 break;
-                        case ETHER_TYPE_ARP:
+                        case RTE_ETHER_TYPE_ARP:
                                 if(try_check_and_send_arp_response(pkts[i],onvm_get_pkt_meta((struct rte_mbuf*)pkts[i]))) {
                                         /* For now Only service is INTERNAL_BRIDGE */
 #ifdef ONVM_MGR_ACT_AS_2PORT_FWD_BRIDGE
@@ -1171,7 +1171,7 @@ uint16_t nic_port = DISTRIBUTED_NIC_PORT;
 #endif //ONVM_MGR_ACT_AS_2PORT_FWD_BRIDGE
                                 }
                                 break;
-                        case ETHER_TYPE_RARP:
+                        case RTE_ETHER_TYPE_RARP:
                                 /* For now Only service is INTERNAL_BRIDGE */
 #ifdef ONVM_MGR_ACT_AS_2PORT_FWD_BRIDGE
                                 onv_pkt_send_on_alt_port(NULL,&pkts[i],1);

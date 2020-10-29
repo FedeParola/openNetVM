@@ -56,7 +56,7 @@
 
 //#include <rte_mbuf.h>
 /********************* BFD Specific Defines and Structs ***********************/
-#define BFD_PKT_OFFSET (sizeof(struct ether_hdr) + sizeof(struct ipv4_hdr) + sizeof(struct udp_hdr))
+#define BFD_PKT_OFFSET (sizeof(struct rte_ether_hdr) + sizeof(struct rte_ipv4_hdr) + sizeof(struct rte_udp_hdr))
 
 typedef struct bfd_session_status {
         //Active or passive mode: currently all active
@@ -248,20 +248,20 @@ struct rte_mbuf* create_bfd_packet(void) {
         }
 
         /* craft eth header */
-        struct ether_hdr *ehdr = rte_pktmbuf_mtod(pkt, struct ether_hdr *);
+        struct rte_ether_hdr *ehdr = rte_pktmbuf_mtod(pkt, struct rte_ether_hdr *);
         /* set ether_hdr fields here e.g. */
-        memset(ehdr,0, sizeof(struct ether_hdr));
+        memset(ehdr,0, sizeof(struct rte_ether_hdr));
         //memset(&ehdr->s_addr,0, sizeof(ehdr->s_addr));
         //memset(&ehdr->d_addr,0, sizeof(ehdr->d_addr));
-        //ehdr->ether_type = rte_bswap16(ETHER_TYPE_IPv4);
+        //ehdr->ether_type = rte_bswap16(RTE_ETHER_TYPE_IPV4);
         ehdr->ether_type = rte_bswap16(ETHER_TYPE_BFD);     //change to specific type for ease of packet handling.
 
         /* craft ipv4 header */
-        struct ipv4_hdr *iphdr = (struct ipv4_hdr *)(&ehdr[1]);
-        memset(iphdr,0, sizeof(struct ipv4_hdr));
+        struct rte_ipv4_hdr *iphdr = (struct rte_ipv4_hdr *)(&ehdr[1]);
+        memset(iphdr,0, sizeof(struct rte_ipv4_hdr));
 
         /* set ipv4 header fields here */
-        struct udp_hdr *uhdr = (struct udp_hdr *)(&iphdr[1]);
+        struct rte_udp_hdr *uhdr = (struct rte_udp_hdr *)(&iphdr[1]);
         /* set udp header fields here, e.g. */
         uhdr->src_port = rte_bswap16(3784);
         uhdr->dst_port = rte_bswap16(3784);
@@ -283,17 +283,17 @@ struct rte_mbuf* create_bfd_packet(void) {
         //print_bfd_packet(bfdp);
 
         //set packet properties
-        size_t pkt_size = sizeof(struct ether_hdr) + sizeof(struct ipv4_hdr) + sizeof(struct udp_hdr) + sizeof(BfdPacket);
+        size_t pkt_size = sizeof(struct rte_ether_hdr) + sizeof(struct rte_ipv4_hdr) + sizeof(struct rte_udp_hdr) + sizeof(BfdPacket);
         pkt->data_len = pkt_size;
         pkt->pkt_len = pkt_size;
 
         return pkt;
 }
 int parse_bfd_packet(struct rte_mbuf* pkt) {
-        struct udp_hdr *uhdr;
+        struct rte_udp_hdr *uhdr;
         BfdPacket *bfdp = NULL;
 
-        uhdr = (struct udp_hdr*)(rte_pktmbuf_mtod(pkt, uint8_t*) + sizeof(struct ether_hdr) + sizeof(struct ipv4_hdr));
+        uhdr = (struct rte_udp_hdr*)(rte_pktmbuf_mtod(pkt, uint8_t*) + sizeof(struct rte_ether_hdr) + sizeof(struct rte_ipv4_hdr));
         //bfdp = (BfdPacket*)(rte_pktmbuf_mtod(pkt, uint8_t*) + BFD_PKT_OFFSET);
         bfdp = (BfdPacket *)(&uhdr[1]);
 
@@ -466,20 +466,20 @@ struct rte_mbuf* create_bfd_packet_spcl(BfdPacketHeader *pkt_hdr) {
         }
 
         /* craft eth header */
-        struct ether_hdr *ehdr = rte_pktmbuf_mtod(pkt, struct ether_hdr *);
+        struct rte_ether_hdr *ehdr = rte_pktmbuf_mtod(pkt, struct rte_ether_hdr *);
         /* set ether_hdr fields here e.g. */
-        memset(ehdr,0, sizeof(struct ether_hdr));
+        memset(ehdr,0, sizeof(struct rte_ether_hdr));
         //memset(&ehdr->s_addr,0, sizeof(ehdr->s_addr));
         //memset(&ehdr->d_addr,0, sizeof(ehdr->d_addr));
-        //ehdr->ether_type = rte_bswap16(ETHER_TYPE_IPv4);
+        //ehdr->ether_type = rte_bswap16(RTE_ETHER_TYPE_IPV4);
         ehdr->ether_type = rte_bswap16(ETHER_TYPE_BFD);     //change to specific type for ease of packet handling.
 
         /* craft ipv4 header */
-        struct ipv4_hdr *iphdr = (struct ipv4_hdr *)(&ehdr[1]);
-        memset(iphdr,0, sizeof(struct ipv4_hdr));
+        struct rte_ipv4_hdr *iphdr = (struct rte_ipv4_hdr *)(&ehdr[1]);
+        memset(iphdr,0, sizeof(struct rte_ipv4_hdr));
 
         /* set ipv4 header fields here */
-        struct udp_hdr *uhdr = (struct udp_hdr *)(&iphdr[1]);
+        struct rte_udp_hdr *uhdr = (struct rte_udp_hdr *)(&iphdr[1]);
         /* set udp header fields here, e.g. */
         uhdr->src_port = rte_bswap16(3784);
         uhdr->dst_port = rte_bswap16(3784);
@@ -494,7 +494,7 @@ struct rte_mbuf* create_bfd_packet_spcl(BfdPacketHeader *pkt_hdr) {
         bfdp->header.flags = 2;
 
         //set packet properties
-        size_t pkt_size = sizeof(struct ether_hdr) + sizeof(struct ipv4_hdr) + sizeof(struct udp_hdr) + sizeof(BfdPacket);
+        size_t pkt_size = sizeof(struct rte_ether_hdr) + sizeof(struct rte_ipv4_hdr) + sizeof(struct rte_udp_hdr) + sizeof(BfdPacket);
         pkt->data_len = pkt_size;
         pkt->pkt_len = pkt_size;
 

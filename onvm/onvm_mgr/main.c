@@ -96,7 +96,7 @@ nf_pkt_handler nf_process_packet = process_nf_function_inline;
 #include "onvm_zk_common.h"
 #else
 uint8_t remote_eth_addr[6];
-struct ether_addr remote_eth_addr_struct;
+struct rte_ether_addr remote_eth_addr_struct;
 #endif
 
 typedef struct thread_core_map_t {
@@ -665,7 +665,7 @@ main(int argc, char *argv[]) {
         }
 #else
         printf("Zookeeper is disabled, use static setting\n");
-        ether_addr_copy((struct ether_addr *)&remote_eth_addr, &remote_eth_addr_struct);
+        rte_ether_addr_copy((struct rte_ether_addr *)&remote_eth_addr, &remote_eth_addr_struct);
         onvm_print_ethaddr("remote addr:", &remote_eth_addr_struct);
 #endif
 #endif

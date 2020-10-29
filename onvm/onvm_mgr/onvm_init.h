@@ -211,7 +211,7 @@ extern struct rte_ring *tx_nf_state_latch_ring; //ring used by TX_RSYNC to store
 #ifdef ENABLE_VXLAN
 #ifndef ENABLE_ZOOKEEPER
 extern uint8_t remote_eth_addr[6];
-extern struct ether_addr remote_eth_addr_struct;
+extern struct rte_ether_addr remote_eth_addr_struct;
 #endif //ENABLE_ZOOKEEPER
 #endif //ENABLE_VXLAN
 /**********************************Functions**********************************/

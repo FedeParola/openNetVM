@@ -46,9 +46,9 @@
 
 struct port_info;
 struct rte_mbuf;
-struct tcp_hdr;
-struct udp_hdr;
-struct ipv4_hdr;
+struct rte_tcp_hdr;
+struct rte_udp_hdr;
+struct rte_ipv4_hdr;
 
 #define IP_PROTOCOL_TCP 6
 #define IP_PROTOCOL_UDP 17
@@ -110,19 +110,19 @@ onvm_pkt_mac_addr_swap(struct rte_mbuf* pkt, unsigned dst_port);
 /**
  * Return a pointer to the tcp/udp/ip header in the packet, or NULL if not a TCP packet
  */
-struct tcp_hdr*
+struct rte_tcp_hdr*
 onvm_pkt_tcp_hdr(struct rte_mbuf* pkt);
 
-struct ether_hdr*
+struct rte_ether_hdr*
 onvm_pkt_ether_hdr(struct rte_mbuf* pkt);
 
-struct udp_hdr*
+struct rte_udp_hdr*
 onvm_pkt_udp_hdr(struct rte_mbuf* pkt);
 
-struct ipv4_hdr*
+struct rte_ipv4_hdr*
 onvm_pkt_ipv4_hdr(struct rte_mbuf* pkt);
 
-struct vlan_hdr*
+struct rte_vlan_hdr*
 onvm_pkt_vlan_hdr(struct rte_mbuf* pkt);
 
 /**
@@ -144,16 +144,16 @@ void
 onvm_pkt_print(struct rte_mbuf* pkt);  // calls the funcs below
 
 void
-onvm_pkt_print_tcp(struct tcp_hdr* hdr);
+onvm_pkt_print_tcp(struct rte_tcp_hdr* hdr);
 
 void
-onvm_pkt_print_udp(struct udp_hdr* hdr);
+onvm_pkt_print_udp(struct rte_udp_hdr* hdr);
 
 void
-onvm_pkt_print_ipv4(struct ipv4_hdr* hdr);
+onvm_pkt_print_ipv4(struct rte_ipv4_hdr* hdr);
 
 void
-onvm_pkt_print_ether(struct ether_hdr* hdr);
+onvm_pkt_print_ether(struct rte_ether_hdr* hdr);
 
 /**
  * Parsing ip addr of form X.X.X.X into decimal form

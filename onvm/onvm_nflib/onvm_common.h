@@ -676,7 +676,8 @@ static inline struct onvm_pkt_meta* onvm_get_pkt_meta(struct rte_mbuf* pkt) {
 }
 
 static inline uint8_t onvm_get_pkt_chain_index(struct rte_mbuf* pkt) {
-        return ((struct onvm_pkt_meta*)&pkt->udata64)->chain_index;
+        struct onvm_pkt_meta* pkt_meta = (struct onvm_pkt_meta*)&pkt->udata64;
+        return pkt_meta->chain_index;
 }
 
 /*
@@ -739,7 +740,7 @@ struct tx_stats{
 struct port_info {
         uint8_t num_ports;
         uint8_t id[RTE_MAX_ETHPORTS];
-        struct ether_addr mac[RTE_MAX_ETHPORTS];
+        struct rte_ether_addr mac[RTE_MAX_ETHPORTS];
         uint8_t down_status[RTE_MAX_ETHPORTS]; //store BFD live=0/dead(1,2) status
         volatile struct rx_stats rx_stats;
         volatile struct tx_stats tx_stats;

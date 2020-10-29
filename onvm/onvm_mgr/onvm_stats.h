@@ -230,7 +230,7 @@ const char * onvm_stats_print_MAC(uint8_t port);
  * 
  */
 
-void onvm_print_ethaddr(const char *name, struct ether_addr *eth_addr);
+void onvm_print_ethaddr(const char *name, struct rte_ether_addr *eth_addr);
 
 extern ONVM_STATS_OUTPUT stats_destination;
 

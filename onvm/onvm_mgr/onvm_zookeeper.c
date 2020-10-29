@@ -74,7 +74,7 @@ static char *nf_stat_paths[MAX_NFS];
 // Cache of remote MAC addresses
 struct remote_service_result {
         char mac_address[MAC_STR_LEN];
-        struct ether_addr mac_address_struct;
+        struct rte_ether_addr mac_address_struct;
         time_t expiration;
 };
 static struct remote_service_result service_lookup_cache[MAX_SERVICES];
@@ -85,7 +85,7 @@ static struct remote_service_result service_lookup_cache[MAX_SERVICES];
 //static int enqueue_remote_scale_msg(int64_t manager_id, uint16_t service_id);
 
 static inline int update_service_last_modified(uint16_t service_id);
-static inline int mac_string_to_struct(const char *data, struct ether_addr *addr);
+static inline int mac_string_to_struct(const char *data, struct rte_ether_addr *addr);
 static inline void free_String_vector(struct String_vector *v);
 
 int
@@ -250,7 +250,7 @@ onvm_zk_disconnect(void) {
 }
 
 int64_t
-onvm_zk_lookup_service(struct rte_mbuf *pkt, uint16_t service_id, struct ether_addr *dst) {
+onvm_zk_lookup_service(struct rte_mbuf *pkt, uint16_t service_id, struct rte_ether_addr *dst) {
         char path_buf[128];
         char data_buf[MAC_STR_LEN + 1];
         struct String_vector children;
@@ -491,8 +491,8 @@ can_scale_remotely(uint16_t service_id) {
 #endif
 
 static inline int
-mac_string_to_struct(const char *data, struct ether_addr *addr) {
-        unsigned int temp[ETHER_ADDR_LEN];
+mac_string_to_struct(const char *data, struct rte_ether_addr *addr) {
+        unsigned int temp[RTE_ETHER_ADDR_LEN];
         int bytes_found;
         int i;
 
@@ -503,14 +503,14 @@ mac_string_to_struct(const char *data, struct ether_addr *addr) {
                 &temp[3],
                 &temp[4],
                 &temp[5]);
-        if (bytes_found != ETHER_ADDR_LEN) {
+        if (bytes_found != RTE_ETHER_ADDR_LEN) {
                 return 0;
         }
 
-        for (i = 0; i < ETHER_ADDR_LEN; i++) {
+        for (i = 0; i < RTE_ETHER_ADDR_LEN; i++) {
                 addr->addr_bytes[i] = (uint8_t) temp[i];
         }
-        return ETHER_ADDR_LEN;
+        return RTE_ETHER_ADDR_LEN;
 }
 
 static inline void
